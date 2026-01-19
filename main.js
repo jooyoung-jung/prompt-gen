@@ -1,22 +1,9 @@
 import { CreateMLCEngine } from "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@latest/+esm";
 
 // Qwen3-0.6B-Instruct 모델 설정
-// - 모델 가중치: HuggingFace mlc-ai 저장소
-// - WASM 라이브러리: mlc-ai GitHub 공식 바이너리
-const MODEL_ID = "Qwen3-0.6B-Instruct-q4f16_1-MLC";
-
-const appConfig = {
-    model_list: [
-        {
-            model: "https://huggingface.co/mlc-ai/Qwen3-0.6B-Instruct-q4f16_1-MLC",
-            model_id: MODEL_ID,
-            model_lib: "https://raw.githubusercontent.com/AIPIELab/wasm-helper/main/Qwen3-0.6B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm",
-            overrides: {
-                context_window_size: 4096,
-            },
-        },
-    ],
-};
+// WebLLM 내장 모델 리스트에서 Qwen3-0.6B 사용
+// 모델 가중치는 자동으로 HuggingFace mlc-ai 저장소에서 다운로드됨
+const MODEL_ID = "Qwen3-0.6B-q4f16_1-MLC";
 
 const SYSTEM_PROMPT = `You are an Antigravity Image Artist. Your role is to expand user keywords into ethereal, weightless, and surreal image prompts in English. Focus on concepts like 'floating', 'suspended', 'ethereal lighting', and 'defying gravity'. Output ONLY the Prompt and Negative Prompt.`;
 
@@ -86,7 +73,6 @@ async function initModel() {
         engine = await CreateMLCEngine(
             MODEL_ID,
             {
-                appConfig: appConfig,
                 initProgressCallback: initProgressCallback
             }
         );
