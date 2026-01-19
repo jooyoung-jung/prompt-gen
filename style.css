@@ -1,24 +1,23 @@
-/* Glassmorphism Utilities */
+/* Base Styles */
+* {
+    box-sizing: border-box;
+}
+
+/* Glassmorphism Panel */
 .glass-panel {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow:
+        0 4px 30px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* Animations */
-@keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
-}
-
-.floating-animation {
-    animation: float 6s ease-in-out infinite;
-}
-
 @keyframes shimmer {
-    100% { transform: translateX(100%); }
+    100% {
+        transform: translateX(100%);
+    }
 }
 
 .animate-shimmer {
@@ -26,22 +25,31 @@
 }
 
 @keyframes pulse-slow {
-    0%, 100% { opacity: 0.2; transform: scale(1); }
-    50% { opacity: 0.15; transform: scale(1.1); }
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.2;
+        transform: scale(1.05);
+    }
 }
 
 .animate-pulse-slow {
-    animation: pulse-slow 8s ease-in-out infinite;
+    animation: pulse-slow 10s ease-in-out infinite;
 }
 
 /* Particle Animation */
 .particle {
     position: absolute;
-    background: white;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
     border-radius: 50%;
     pointer-events: none;
     opacity: 0;
-    animation: explode 1s ease-out forwards;
+    animation: explode 0.8s ease-out forwards;
 }
 
 @keyframes explode {
@@ -49,23 +57,79 @@
         transform: translate(0, 0) scale(1);
         opacity: 1;
     }
+
     100% {
-        transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(0);
+        transform: translate(var(--tx), var(--ty)) scale(0);
         opacity: 0;
     }
 }
 
-/* Custom Scrollbar for Output if needed */
+/* Input Focus Glow */
+input:focus {
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+/* Button Hover Effect */
+button:not(:disabled):hover {
+    box-shadow: 0 10px 40px -10px rgba(99, 102, 241, 0.4);
+}
+
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
+    height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.1); 
-}
-::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.1); 
+    background: rgba(0, 0, 0, 0.1);
     border-radius: 3px;
 }
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.2); 
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Output Text Formatting */
+#output-text {
+    font-size: 0.9375rem;
+    line-height: 1.75;
+}
+
+/* Loading Skeleton */
+@keyframes loading-pulse {
+
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
+}
+
+.loading-text {
+    animation: loading-pulse 1.5s ease-in-out infinite;
+}
+
+/* Selection */
+::selection {
+    background: rgba(99, 102, 241, 0.3);
+    color: white;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+    .glass-panel {
+        padding: 1.5rem !important;
+    }
+
+    h1 {
+        font-size: 1.75rem !important;
+    }
 }
