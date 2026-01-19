@@ -1,169 +1,123 @@
 import { CreateMLCEngine } from "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@latest/+esm";
 
-// Qwen3-0.6B 모델 설정
 const MODEL_ID = "Qwen3-0.6B-q4f16_1-MLC";
-
-const SYSTEM_PROMPT = `You are a professional AI image prompt engineer. Your role is to expand user keywords into detailed, creative, and visually descriptive image prompts in English. Focus on composition, lighting, style, mood, and artistic details. Output ONLY the Prompt and Negative Prompt in a clear format.`;
+const SYSTEM_PROMPT = `You are a professional AI image prompt engineer. Expand the user keyword into a detailed, high-quality image prompt in English. Output ONLY the Prompt and Negative Prompt.`;
 
 // DOM Elements
 const generateBtn = document.getElementById('generate-btn');
+const btnIcon = document.getElementById('btn-icon');
+const btnText = document.getElementById('btn-text');
 const userInput = document.getElementById('user-input');
-const outputPlaceholder = document.getElementById('output-placeholder');
-const outputResult = document.getElementById('output-result');
+const outputContainer = document.getElementById('output-container');
 const outputText = document.getElementById('output-text');
-const progressContainer = document.getElementById('progress-container');
-const progressBar = document.getElementById('progress-bar');
-const progressPercent = document.getElementById('progress-percent');
-const progressText = document.getElementById('progress-text');
-const statusBadge = document.getElementById('status-badge');
-const copyBtn = document.getElementById('copy-btn');
+const resetBtn = document.getElementById('reset-btn');
+const loadingOverlay = document.getElementById('loading-overlay');
+const innerLoadingBar = document.getElementById('inner-loading-bar');
+const loadingText = document.getElementById('loading-text');
 
 let engine = null;
 let isModelLoaded = false;
 
-// Update status badge
-function updateStatus(text, color = 'amber') {
-    const dot = statusBadge.querySelector('span:first-child');
-    const label = statusBadge.querySelector('span:last-child');
-
-    dot.className = `w-2 h-2 rounded-full bg-${color}-400`;
-    if (color === 'green') {
-        dot.classList.remove('animate-pulse');
+// Handle Input validation
+function updateBtnState() {
+    const val = userInput.value.trim();
+    if (val) {
+        generateBtn.disabled = false;
+        btnIcon.innerText = "✨";
+        btnText.innerText = "프롬프트 생성";
     } else {
-        dot.classList.add('animate-pulse');
+        generateBtn.disabled = true;
+        btnIcon.innerText = "⚠️";
+        btnText.innerText = "주제를 입력해주세요";
     }
-    label.textContent = text;
 }
 
-// Remove <think>...</think> tags from output
-function removeThinkTags(text) {
+// Remove <think> tags
+function filterResult(text) {
     return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 }
 
-// Particle Effect
-function createParticles(x, y) {
-    const particleCount = 15;
-    const container = document.getElementById('particles');
-
-    for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.classList.add('particle');
-
-        const angle = Math.random() * Math.PI * 2;
-        const velocity = 40 + Math.random() * 80;
-        const tx = Math.cos(angle) * velocity;
-        const ty = Math.sin(angle) * velocity;
-
-        particle.style.width = Math.random() * 4 + 2 + 'px';
-        particle.style.height = particle.style.width;
-        particle.style.left = x + 'px';
-        particle.style.top = y + 'px';
-        particle.style.setProperty('--tx', `${tx}px`);
-        particle.style.setProperty('--ty', `${ty}px`);
-
-        container.appendChild(particle);
-        setTimeout(() => particle.remove(), 800);
-    }
-}
-
-// Copy to clipboard
-function copyToClipboard() {
-    const text = outputText.innerText;
-    navigator.clipboard.writeText(text).then(() => {
-        const originalText = copyBtn.innerHTML;
-        copyBtn.innerHTML = `
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            복사됨!
-        `;
-        copyBtn.classList.add('text-green-400');
-        setTimeout(() => {
-            copyBtn.innerHTML = originalText;
-            copyBtn.classList.remove('text-green-400');
-        }, 2000);
-    });
-}
-
-// Init Model
+// Init WebLLM
 async function initModel() {
     if (isModelLoaded) return;
 
-    progressContainer.classList.remove('hidden');
-    progressText.innerText = "모델 초기화 중...";
-    updateStatus('로딩 중', 'amber');
+    loadingOverlay.classList.remove('hidden');
+    loadingOverlay.classList.add('flex');
 
     const initProgressCallback = (report) => {
-        console.log(report);
-        const progress = report.progress;
-        const pct = Math.round(progress * 100);
-        progressBar.style.width = `${pct}%`;
-        progressPercent.innerText = `${pct}%`;
-        progressText.innerText = report.text;
+        const pct = Math.round(report.progress * 100);
+        innerLoadingBar.style.width = `${pct}%`;
+        loadingText.innerText = `모델 로딩 중 (${pct}%)`;
     };
 
     try {
         engine = await CreateMLCEngine(MODEL_ID, { initProgressCallback });
         isModelLoaded = true;
-        progressContainer.classList.add('hidden');
-        updateStatus('준비 완료', 'green');
-        console.log("Model Loaded!");
-    } catch (error) {
-        console.error("Model Load Failed:", error);
-        progressText.innerText = "모델 로딩 실패";
-        progressText.classList.add('text-red-400');
-        updateStatus('오류', 'red');
+        loadingOverlay.classList.add('hidden');
+        loadingOverlay.classList.remove('flex');
+    } catch (e) {
+        console.error(e);
+        loadingText.innerText = "로딩 실패";
     }
 }
 
-// Generate Handler
-async function handleGenerate(e) {
-    const rect = generateBtn.getBoundingClientRect();
-    createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
-
+// Generate
+async function handleGenerate() {
     const prompt = userInput.value.trim();
     if (!prompt) return;
 
     if (!isModelLoaded) {
-        generateBtn.disabled = true;
         await initModel();
-        generateBtn.disabled = false;
         if (!isModelLoaded) return;
     }
 
     generateBtn.disabled = true;
-    outputPlaceholder.classList.add('hidden');
-    outputResult.classList.remove('hidden');
-    outputText.innerText = "프롬프트 생성 중...";
-    outputText.style.opacity = '0.5';
+    btnText.innerText = "생성 중...";
+    outputContainer.classList.add('hidden');
 
     try {
         const messages = [
             { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: `Create a detailed image prompt for: ${prompt}` }
+            { role: "user", content: prompt }
         ];
-
         const reply = await engine.chat.completions.create({ messages });
-        let result = reply.choices[0].message.content;
-
-        // Remove <think> tags
-        result = removeThinkTags(result);
+        const result = filterResult(reply.choices[0].message.content);
 
         outputText.innerText = result;
-        outputText.style.opacity = '1';
-
-    } catch (error) {
-        console.error("Generation Failed:", error);
-        outputText.innerText = "오류: 프롬프트를 생성할 수 없습니다.";
-        outputText.style.opacity = '1';
+        outputContainer.classList.remove('hidden');
+    } catch (e) {
+        console.error(e);
+        outputText.innerText = "오류가 발생했습니다.";
     } finally {
         generateBtn.disabled = false;
+        updateBtnState();
     }
 }
 
-// Event Listeners
-generateBtn.addEventListener('click', handleGenerate);
-userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleGenerate(e);
+// Listeners
+userInput.addEventListener('input', updateBtnState);
+userInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleGenerate();
 });
-copyBtn.addEventListener('click', copyToClipboard);
+generateBtn.addEventListener('click', handleGenerate);
+resetBtn.addEventListener('click', () => {
+    userInput.value = "";
+    outputContainer.classList.add('hidden');
+    updateBtnState();
+});
+
+document.querySelectorAll('.engine-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.engine-btn').forEach(b => {
+            b.classList.remove('active', 'bg-brand-accent');
+            b.classList.add('bg-brand-card', 'border-brand-border', 'text-brand-text-muted');
+        });
+        btn.classList.add('active', 'bg-brand-accent');
+        btn.classList.remove('bg-brand-card', 'border-brand-border', 'text-brand-text-muted');
+    });
+});
+
+document.getElementById('copy-btn').addEventListener('click', () => {
+    navigator.clipboard.writeText(outputText.innerText);
+    alert('복사되었습니다!');
+});
